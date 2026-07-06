@@ -1,0 +1,60 @@
+# Contexto Docker: excluir todo lo que no sea codigo runtime.
+
+# Python temporales
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual envs
+venv/
+env/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Data local (Railway monta /data como volumen)
+data/
+
+# Logs
+logs/
+
+# Docs / metadata
+*.md
+docs/
+AGENTS.md
+!resources/**.md
+
+# IDE / metadata local
+.vscode/
+.idea/
+.cursor/
+.git/
+.gitignore
+agent-transcripts/
+
+# Docker
+Dockerfile
+.dockerignore
+railway.json
+
+# Requirements dev (holidays + pytest solo dev)
+requirements-dev.txt
+
+# Env vars (nunca al contexto)
+.env
+.env.local
+.env.*.local
+
+# Demos y scripts one-shot
+_demo_*.py
+_scratch_*.py
+
+# Windows/macOS metadata
+Thumbs.db
+.DS_Store
