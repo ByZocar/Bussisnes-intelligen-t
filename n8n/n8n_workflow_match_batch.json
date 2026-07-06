@@ -1,0 +1,136 @@
+{
+  "name": "NutriAvicola - Match Batch",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "match-batch",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "trigger-webhook",
+      "name": "Webhook: match-batch",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "match-batch"
+    },
+    {
+      "parameters": {
+        "url": "={{$env.API_BASE_URL}}/batches/{{$json.body.batch_id}}/confirm",
+        "method": "POST",
+        "options": {
+          "response": { "response": { "neverError": true, "fullResponse": true } }
+        }
+      },
+      "id": "http-confirm",
+      "name": "POST /confirm",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            { "value1": "={{$json.statusCode}}", "operation": "equal", "value2": 200 }
+          ]
+        }
+      },
+      "id": "if-confirm-ok",
+      "name": "confirm ok?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.API_BASE_URL}}/batches/{{$('Webhook: match-batch').item.json.body.batch_id}}/generate",
+        "method": "POST",
+        "options": {
+          "response": { "response": { "neverError": true, "fullResponse": true } },
+          "timeout": 300000
+        }
+      },
+      "id": "http-generate",
+      "name": "POST /generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [920, 240]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.API_BASE_URL}}/batches/{{$('Webhook: match-batch').item.json.body.batch_id}}/downloads",
+        "method": "GET"
+      },
+      "id": "http-downloads",
+      "name": "GET /downloads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1160, 240]
+    },
+    {
+      "parameters": {
+        "fromEmail": "notif@nutriavicola.local",
+        "toEmail": "={{$env.NOTIF_EMAIL_TO}}",
+        "subject": "Cumplimiento generado - batch {{$('Webhook: match-batch').item.json.body.batch_id}}",
+        "text": "Batch procesado exitosamente.\n\nArchivos disponibles: {{$json.items.length}}\n\nAccede al panel de descargas: {{$env.FRONTEND_URL}}/batches/{{$('Webhook: match-batch').item.json.body.batch_id}}/descargas\n\nSaludos,\nSistema NutriAvicola"
+      },
+      "id": "email-ok",
+      "name": "Email: exito",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1400, 240]
+    },
+    {
+      "parameters": {
+        "fromEmail": "notif@nutriavicola.local",
+        "toEmail": "={{$env.NOTIF_EMAIL_TO}}",
+        "subject": "ERROR generando batch {{$('Webhook: match-batch').item.json.body.batch_id}}",
+        "text": "Fallo el confirm/generate del batch.\n\nRevisar en el backend: {{$env.API_BASE_URL}}/batches/{{$('Webhook: match-batch').item.json.body.batch_id}}\n\nResponse: {{$json.body}}"
+      },
+      "id": "email-fail",
+      "name": "Email: error",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [920, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\": true, \"batch_id\": \"{{$('Webhook: match-batch').item.json.body.batch_id}}\"}"
+      },
+      "id": "response-ok",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1640, 240]
+    }
+  ],
+  "connections": {
+    "Webhook: match-batch": {
+      "main": [[{ "node": "POST /confirm", "type": "main", "index": 0 }]]
+    },
+    "POST /confirm": {
+      "main": [[{ "node": "confirm ok?", "type": "main", "index": 0 }]]
+    },
+    "confirm ok?": {
+      "main": [
+        [{ "node": "POST /generate", "type": "main", "index": 0 }],
+        [{ "node": "Email: error", "type": "main", "index": 0 }]
+      ]
+    },
+    "POST /generate": {
+      "main": [[{ "node": "GET /downloads", "type": "main", "index": 0 }]]
+    },
+    "GET /downloads": {
+      "main": [[{ "node": "Email: exito", "type": "main", "index": 0 }]]
+    },
+    "Email: exito": {
+      "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
