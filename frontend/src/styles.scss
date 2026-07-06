@@ -1,0 +1,163 @@
+// Fase 7C - Tema corporativo NutriAvicola
+// Paleta derivada del logo: navy (#0F2E4C) + naranja (#E87722).
+// Material 3 recibe paletas base y el resto lo cubrimos con CSS custom
+// properties propias (`--nutri-*`) para acentos, borders y KPI cards.
+
+@use '@angular/material' as mat;
+
+html {
+  height: 100%;
+
+  // Paleta base Material 3. Se usa `azure` como primary (azules corporativos)
+  // y `orange` como tertiary (acentos). Los componentes core (buttons,
+  // toolbar, etc.) heredan estos colores.
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$orange-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+
+  // CSS variables corporativas (override de Material sys tokens donde
+  // aplique + tokens custom para nuestros componentes).
+  --nutri-navy: #0F2E4C;
+  --nutri-navy-deep: #081A2C;
+  --nutri-orange: #E87722;
+  --nutri-orange-light: #FCE1C7;
+  --nutri-orange-deep: #B85F1A;
+  --nutri-grid: #8C8C8C;
+  --nutri-grid-soft: #E0E0E0;
+  --nutri-good: #63BE7B;
+  --nutri-warn: #FFEB84;
+  --nutri-bad: #F8696B;
+  --nutri-muted: #595959;
+  --nutri-surface: #FAFBFC;
+
+  // Sobreescribe tokens de sys para que el toolbar y botones primary usen
+  // el navy corporativo (sin depender del hash exacto del theme mixin).
+  --mat-sys-primary: var(--nutri-navy);
+  --mat-sys-on-primary: #FFFFFF;
+  --mat-sys-tertiary: var(--nutri-orange);
+  --mat-sys-on-tertiary: #FFFFFF;
+}
+
+body {
+  color-scheme: light;
+  background-color: var(--nutri-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+  height: 100%;
+  font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+// -----------------------------------------------------------------------------
+// Utilitarias corporativas (paginas, cards, secciones)
+// -----------------------------------------------------------------------------
+.nutri-page {
+  padding: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.nutri-section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--nutri-navy);
+  margin: 0 0 16px 0;
+  letter-spacing: 0.2px;
+}
+
+.nutri-muted {
+  color: var(--nutri-muted);
+  font-size: 13px;
+}
+
+.nutri-card {
+  background: #FFFFFF;
+  border: 1px solid var(--nutri-grid-soft);
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(15, 46, 76, 0.06);
+}
+
+.nutri-toolbar {
+  background: var(--nutri-navy) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+.nutri-logo-img {
+  height: 34px;
+  margin-right: 16px;
+  filter: brightness(1.05);
+}
+
+.nutri-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  &.good  { background: var(--nutri-good); color: #FFFFFF; }
+  &.warn  { background: var(--nutri-warn); color: #5C4700; }
+  &.bad   { background: var(--nutri-bad); color: #FFFFFF; }
+  &.info  { background: #DDEBF7; color: var(--nutri-navy); }
+  &.muted { background: #EEE; color: var(--nutri-muted); }
+}
+
+.nutri-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &.draft           { background: #E0E0E0; color: #333; }
+  &.ready_to_match  { background: #FFF3CD; color: #856404; }
+  &.matching        { background: #D1ECF1; color: #0C5460; }
+  &.matched         { background: var(--nutri-good); color: #FFF; }
+  &.failed          { background: var(--nutri-bad); color: #FFF; }
+  &.archived        { background: #E9ECEF; color: #6C757D; }
+}
+
+// Tabla estandar (usar dentro de .nutri-card)
+.nutri-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th {
+    background: var(--nutri-navy);
+    color: #FFF;
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+    border: 1px solid var(--nutri-navy-deep);
+  }
+  td {
+    padding: 10px 12px;
+    border: 1px solid var(--nutri-grid);
+    color: var(--nutri-navy-deep);
+  }
+  tr:nth-child(even) td { background: #F7F9FC; }
+  tr.total td {
+    background: var(--nutri-orange-light);
+    font-weight: 700;
+    border-top: 2px solid var(--nutri-orange-deep);
+  }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.pct { text-align: right; font-weight: 600; }
+  td.pct.good { color: #006100; }
+  td.pct.warn { color: #9C5700; }
+  td.pct.bad  { color: #9C0006; }
+}
+
+// Espaciado uniforme entre bloques
+.nutri-stack > * + * { margin-top: 20px; }

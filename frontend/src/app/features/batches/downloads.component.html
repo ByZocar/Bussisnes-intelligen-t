@@ -1,0 +1,89 @@
+<div class="nutri-page nutri-stack">
+  <div>
+    <h1 class="nutri-section-title" style="margin: 0;">Descargas del batch</h1>
+    <p class="nutri-muted" style="margin: 4px 0 0;">
+      El equipo de BI usa el <strong>consolidado</strong> para armar
+      dashboards; los dailies son de referencia por dia; el ZIP contiene
+      todo empaquetado.
+    </p>
+  </div>
+
+  @if (loading()) {
+    <mat-spinner></mat-spinner>
+  } @else if (error()) {
+    <div class="nutri-card">Error: {{ error() }}</div>
+  } @else if (data(); as d) {
+
+    <div class="nutri-card">
+      <h2 class="nutri-section-title">Consolidado mensual</h2>
+      @if (filterKind('consolidado').length === 0) {
+        <p class="nutri-muted">No hay consolidado.</p>
+      }
+      @for (i of filterKind('consolidado'); track i.filename) {
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0;">
+          <div>
+            <mat-icon style="vertical-align: middle; color: var(--nutri-navy);">description</mat-icon>
+            <strong style="margin-left: 6px;">{{ i.filename }}</strong>
+            <span class="nutri-muted" style="margin-left: 10px;">{{ humanSize(i.size_bytes) }}</span>
+          </div>
+          <a mat-flat-button color="primary" [href]="href(i)" download>
+            <mat-icon>download</mat-icon>
+            Descargar
+          </a>
+        </div>
+      }
+    </div>
+
+    <div class="nutri-card">
+      <h2 class="nutri-section-title">Reportes diarios</h2>
+      @if (filterKind('daily').length === 0) {
+        <p class="nutri-muted">No hay dailies.</p>
+      } @else {
+        <table class="nutri-table">
+          <thead>
+            <tr>
+              <th>Archivo</th>
+              <th class="num">Tamano</th>
+              <th style="width: 130px;">Accion</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (i of filterKind('daily'); track i.filename) {
+              <tr>
+                <td>{{ i.filename }}</td>
+                <td class="num">{{ humanSize(i.size_bytes) }}</td>
+                <td>
+                  <a mat-stroked-button color="primary" [href]="href(i)" download>
+                    <mat-icon>download</mat-icon>
+                    Descargar
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="nutri-card">
+      <h2 class="nutri-section-title">Descarga masiva</h2>
+      @for (i of filterKind('zip'); track i.filename) {
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0;">
+          <div>
+            <mat-icon style="vertical-align: middle; color: var(--nutri-orange);">folder_zip</mat-icon>
+            <strong style="margin-left: 6px;">{{ i.filename }}</strong>
+            <span class="nutri-muted" style="margin-left: 10px;">{{ humanSize(i.size_bytes) }}</span>
+          </div>
+          <a mat-flat-button color="accent" [href]="href(i)" download>
+            <mat-icon>download</mat-icon>
+            Descargar todo (.zip)
+          </a>
+        </div>
+      }
+    </div>
+
+    <div style="text-align: center;">
+      <a mat-button routerLink="/">Volver al dashboard</a>
+    </div>
+  }
+</div>

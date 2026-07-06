@@ -1,0 +1,13 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.active {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+mat-toolbar a[mat-button] {
+  color: #FFFFFF !important;
+  margin-left: 4px;
+}

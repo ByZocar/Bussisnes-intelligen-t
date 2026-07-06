@@ -1,0 +1,21 @@
+<mat-toolbar class="nutri-toolbar">
+  <a routerLink="/" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+    <img src="assets/logo.jpg" alt="NutriAvicola" class="nutri-logo-img" />
+    <span style="font-size: 16px; font-weight: 600; letter-spacing: 0.3px;">
+      Cumplimiento PRE CORTE vs FLASH
+    </span>
+  </a>
+  <span style="flex: 1 1 auto;"></span>
+  <a mat-button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    <mat-icon>dashboard</mat-icon>
+    Dashboard
+  </a>
+  <a mat-button routerLink="/batches/nuevo" routerLinkActive="active">
+    <mat-icon>add</mat-icon>
+    Nuevo batch
+  </a>
+</mat-toolbar>
+
+<main>
+  <router-outlet />
+</main>

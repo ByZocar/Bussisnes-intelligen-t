@@ -1,0 +1,68 @@
+<div class="nutri-page nutri-stack">
+  @if (loading()) {
+    <mat-spinner></mat-spinner>
+  } @else if (error()) {
+    <div class="nutri-card">Error: {{ error() }}</div>
+  } @else if (batch(); as b) {
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <h1 class="nutri-section-title" style="margin: 0;">{{ b.nombre || '(sin nombre)' }}</h1>
+        <p class="nutri-muted" style="margin: 4px 0 0;">
+          <span class="nutri-status" [class]="b.status">{{ b.status }}</span>
+          &middot; {{ b.num_pre_cortes }} pre_corte(s) &middot;
+          @if (b.flash) {
+            flash {{ b.flash.periodo_year }}-{{ b.flash.periodo_month }}
+          } @else { sin flash }
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        @if (b.status === 'matched') {
+          <a mat-flat-button color="primary" [routerLink]="['/batches', b.id, 'descargas']">
+            <mat-icon>download</mat-icon>
+            Descargas
+          </a>
+        }
+        <button mat-stroked-button color="warn" (click)="archive()">
+          <mat-icon>archive</mat-icon>
+          Archivar
+        </button>
+      </div>
+    </div>
+
+    <div class="nutri-card">
+      <h2 class="nutri-section-title">Pre cortes ({{ b.pre_cortes.length }})</h2>
+      @if (b.pre_cortes.length === 0) {
+        <p class="nutri-muted">No hay pre_cortes en este batch todavia.</p>
+      } @else {
+        <table class="nutri-table">
+          <thead>
+            <tr>
+              <th>Archivo</th>
+              <th>Fecha archivo</th>
+              <th>Fecha produccion resuelta</th>
+              <th class="num">Filas</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pc of b.pre_cortes; track pc.carga_id) {
+              <tr>
+                <td>{{ pc.filename }}</td>
+                <td>{{ pc.fecha_archivo }}</td>
+                <td><strong>{{ pc.fecha_produccion }}</strong></td>
+                <td class="num">{{ pc.num_filas_original }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="nutri-card">
+      <p class="nutri-muted">
+        Nota: este batch fue creado desde el wizard. Para editarlo, deberia
+        estar en <code>draft</code>. Batches en estado <code>ready_to_match</code>
+        o superior son inmutables — crea uno nuevo si necesitas cambios.
+      </p>
+    </div>
+  }
+</div>
