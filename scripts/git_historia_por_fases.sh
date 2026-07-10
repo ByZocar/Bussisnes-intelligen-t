@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reconstruye historial Git por fases (ver docs/HISTORIA_FASES.md).
+# Reconstruye historial Git por fases (ver scripts/git_historia_manifest.json).
 # Equivalente Bash de scripts/git_historia_por_fases.ps1
 set -euo pipefail
 

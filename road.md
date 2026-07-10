@@ -24,7 +24,7 @@ rubrica.md los referencian en forma abreviada.
 Entregables:
 
 - [x] AGENTS.md nuevo (system_role, contexto, MatchProfile, principio de
-  entrevista, compromisos). Historico preservado en docs/AGENTS_LEGACY.md.
+  entrevista, compromisos). Historico del MVP en historial git.
 - [x] road.md (este archivo).
 - [x] rubrica.md.
 - [x] Exploracion de datos reales CEN/SAP y registro de hallazgos
@@ -349,9 +349,9 @@ Entregables:
 - [x] Runner base de verificacion ejecutado (`scripts/verificacion_fase6.py`)
   en entorno local con dependencias; checks automatizados en verde
   (pytest clave + verificacion PBIP numerica + build frontend).
-- [ ] docs/manual_uso_analistas.md (borrador inicial creado 2026-07-09; falta validacion paso a paso en sistema real)
-- [ ] docs/manual_mantenimiento.md (borrador inicial creado 2026-07-09; falta corrida completa de checklist operativo)
-- [ ] docs/informe_presupuesto.md (plantilla creada 2026-07-09; falta completar con costos medidos finales por periodo)
+- [ ] Manual de uso para analistas (borrador retirado del repo 2026-07-10; falta validacion paso a paso en sistema real)
+- [ ] Manual de mantenimiento (borrador retirado del repo 2026-07-10; falta corrida completa de checklist operativo)
+- [ ] Informe de presupuesto (plantilla retirada del repo 2026-07-10; falta completar con costos medidos finales por periodo)
   (costos Gemini medidos por telemetria,
   no estimados, por perfil/mes; Railway, Vercel, Supabase; proyeccion a N
   procesos) + necesidades futuras (roles, permisos, SSO, fuentes API
@@ -383,7 +383,7 @@ esta terminado.
 ## Registro de avance
 
 - 2026-07-09 (11): Bloque de seguridad y credenciales implementado siguiendo
-  `docs/seguridad_plan.md` (Bloques 0-5 en una sola entrega tecnica):
+  plan de seguridad (Bloques 0-5 en una sola entrega tecnica):
   (a) auth global "secure by default" en FastAPI con whitelist minima
   (`/auth/login`, `/health`, `/auth/*`), RBAC por permisos y ownership sobre
   `profiles`, `batches`, `runs` y `cargas`; (b) sesiones server-side con
@@ -637,8 +637,8 @@ esta terminado.
   E2E UI no tecnico, bateria adversa manual y cierre de costos por periodo).
 
 - 2026-07-09: Inicio de Fase 6 (documentacion de cierre). Se crearon
-  borradores operativos en `docs/manual_uso_analistas.md`,
-  `docs/manual_mantenimiento.md` y `docs/informe_presupuesto.md`, alineados
+  borradores operativos de manuales e informe de presupuesto (retirados del
+  repo 2026-07-10), alineados
   con rubrica (gates de uso no tecnico, mantenimiento y costos medidos por
   telemetria). Pendiente: validar cada paso en ejecucion real y completar
   cifras finales por perfil/mes.

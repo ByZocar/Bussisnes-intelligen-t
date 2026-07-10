@@ -2,10 +2,9 @@
 
 Guia de contexto que TODO agente (humano o AI, principal o subagente) debe
 leer completa antes de trabajar en este repositorio. Este documento es la
-fuente de verdad del proyecto actual. La historia completa del MVP anterior
-(PRE CORTE vs FLASH, Fases 0 a 7E) vive en
-[docs/AGENTS_LEGACY.md](docs/AGENTS_LEGACY.md) y sigue siendo valida como
-referencia tecnica de los modulos existentes.
+fuente de verdad del proyecto actual. La historia del MVP anterior
+(PRE CORTE vs FLASH, Fases 0 a 7E) queda en el historial de git; los modulos
+legados en `app/core/` siguen siendo referencia tecnica valida.
 
 Documentos hermanos obligatorios:
 
@@ -41,8 +40,7 @@ repetitivo.
 
 **Lo que ya existe (MVP, 100% funcional):** el flujo PRE CORTE vs FLASH,
 que mide cumplimiento de produccion de huevo. Pipeline deterministico
-FastAPI + SQLite + Angular + n8n + export Excel corporativo. Ver
-[docs/AGENTS_LEGACY.md](docs/AGENTS_LEGACY.md). Su limitacion: es un parche
+FastAPI + SQLite + Angular + n8n + export Excel corporativo. Su limitacion: es un parche
 mono-proceso. Cada analista del pais tiene archivos con estructuras
 distintas; el MVP solo entiende UNA estructura exacta.
 
