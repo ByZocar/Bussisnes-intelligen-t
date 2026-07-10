@@ -62,6 +62,12 @@ export const routes: Routes = [
         title: "Business Intelligen't — Nuevo proceso",
       },
       {
+        path: 'procesos/:id/repetir',
+        loadComponent: () =>
+          import('./features/profiles/profile-rerun.component').then(m => m.ProfileRerunComponent),
+        title: "Business Intelligen't — Repetir proceso",
+      },
+      {
         path: 'procesos/:id',
         loadComponent: () =>
           import('./features/profiles/profile-detail.component').then(m => m.ProfileDetailComponent),

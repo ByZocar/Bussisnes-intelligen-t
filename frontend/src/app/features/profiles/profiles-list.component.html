@@ -74,6 +74,12 @@
                   <span class="nutri-status" [class]="statusClass(p.status)">
                     {{ statusLabel(p.status) }}
                   </span>
+                  @if (p.status === 'approved') {
+                    <span class="nutri-badge good" matTooltip="Proceso aprobado: se puede repetir con archivos nuevos sin volver a hablar con los agentes">
+                      <mat-icon style="font-size:14px;width:14px;height:14px;">bookmark</mat-icon>
+                      Plantilla
+                    </span>
+                  }
                 </td>
                 <td class="nutri-muted">{{ (p.creado_en || '') | slice: 0:16 }}</td>
                 <td class="nutri-muted">
@@ -89,6 +95,14 @@
                     <mat-icon>open_in_new</mat-icon>
                     Abrir
                   </a>
+                  @if (p.status === 'approved') {
+                    <a mat-flat-button color="primary"
+                       [routerLink]="['/app/procesos', p.profile_id, 'repetir']"
+                       matTooltip="Subir archivos de otro periodo y generar sin agentes">
+                      <mat-icon>replay</mat-icon>
+                      Repetir
+                    </a>
+                  }
                 </td>
               </tr>
             }

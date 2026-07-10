@@ -1,0 +1,30 @@
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.file-slot {
+  border: 1px dashed var(--bi-border, #cbd5e1);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &--filled {
+    border-style: solid;
+    border-color: var(--bi-royal, #1d4ed8);
+    background: rgba(29, 78, 216, 0.04);
+  }
+}
+
+.downloads-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--bi-border, #e2e8f0);
+  border-radius: 10px;
+}

@@ -726,6 +726,50 @@ def _ejecutar_aprobado(conn, profile_id: str, version: int | None, parameters: d
     return profile, result
 
 
+def _render_entregables(profile, result, profile_id: str) -> list[str]:
+    """Renderiza Excel + PBIP (zip) del resultado y devuelve los nombres de
+    archivo. Aisla el render para que un spec de reporte problematico devuelva
+    un 422 accionable en vez de un 500 opaco."""
+    import zipfile
+
+    from app.platform.render_excel import render_excel
+    from app.platform.render_pbip import render_pbip
+
+    out_dir = _PROFILE_OUTPUTS / profile_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+    generados: list[str] = []
+    try:
+        if profile.report and profile.report.excel:
+            prefix = profile.report.excel.filename_prefix
+        else:
+            prefix = profile_id
+        excel_path = out_dir / f"{prefix}_v{profile.version}.xlsx"
+        if profile.report and profile.report.excel:
+            render_excel(profile, result, excel_path)
+            generados.append(excel_path.name)
+
+        pbip_dir = out_dir / f"pbip_{profile_id}_v{profile.version}"
+        if pbip_dir.exists():
+            shutil.rmtree(pbip_dir)
+        render_pbip(profile, result, pbip_dir)
+        pbip_zip = out_dir / f"pbip_{profile_id}_v{profile.version}.zip"
+        with zipfile.ZipFile(pbip_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+            for f in sorted(pbip_dir.rglob("*")):
+                if f.is_file():
+                    zf.write(f, f.relative_to(pbip_dir.parent))
+        generados.append(pbip_zip.name)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "No se pudieron generar los entregables por un problema en "
+                f"el diseno del reporte: {type(exc).__name__}: {exc}. "
+                "Usa 'refine' para que los agentes ajusten la propuesta."
+            ),
+        ) from exc
+    return generados
+
+
 @router.post("/{profile_id}/generate")
 def post_generate(
     profile_id: str,
@@ -735,59 +779,81 @@ def post_generate(
     """Ejecuta el profile aprobado Y genera los entregables descargables:
     Excel formateado (con la base de datos incluida como hojas-tabla) y
     proyecto Power BI (PBIP) comprimido en zip."""
-    import zipfile
-
-    from app.platform.render_excel import render_excel
-    from app.platform.render_pbip import render_pbip
-
     with get_conn() as conn:
         _assert_profile_run_access(conn, profile_id, user)
         profile, result = _ejecutar_aprobado(conn, profile_id, body.version, body.parameters)
         info = persist_run(conn, result)
-
-        out_dir = _PROFILE_OUTPUTS / profile_id
-        out_dir.mkdir(parents=True, exist_ok=True)
-        generados: list[str] = []
-
-        # El render se envuelve para que un profile con un spec de reporte
-        # problematico devuelva un 422 accionable (pedir refine) en vez de un
-        # 500 opaco. El dry-run del orquestador ya deberia haberlo evitado.
-        try:
-            if profile.report and profile.report.excel:
-                prefix = profile.report.excel.filename_prefix
-            else:
-                prefix = profile_id
-            excel_path = out_dir / f"{prefix}_v{profile.version}.xlsx"
-            if profile.report and profile.report.excel:
-                render_excel(profile, result, excel_path)
-                generados.append(excel_path.name)
-
-            pbip_dir = out_dir / f"pbip_{profile_id}_v{profile.version}"
-            if pbip_dir.exists():
-                shutil.rmtree(pbip_dir)
-            render_pbip(profile, result, pbip_dir)
-            pbip_zip = out_dir / f"pbip_{profile_id}_v{profile.version}.zip"
-            with zipfile.ZipFile(pbip_zip, "w", zipfile.ZIP_DEFLATED) as zf:
-                for f in sorted(pbip_dir.rglob("*")):
-                    if f.is_file():
-                        zf.write(f, f.relative_to(pbip_dir.parent))
-            generados.append(pbip_zip.name)
-        except Exception as exc:  # noqa: BLE001
-            raise HTTPException(
-                status_code=422,
-                detail=(
-                    "No se pudieron generar los entregables por un problema en "
-                    f"el diseno del reporte: {type(exc).__name__}: {exc}. "
-                    "Usa 'refine' para que los agentes ajusten la propuesta."
-                ),
-            ) from exc
-
+        generados = _render_entregables(profile, result, profile_id)
         return {
             "ok": True,
             "run": info,
             "summary": result.summary(),
             "kpis": result.kpis,
             "archivos": generados,
+        }
+
+
+@router.post("/{profile_id}/reejecutar")
+async def post_reejecutar(
+    profile_id: str,
+    left_file: UploadFile = File(...),
+    right_file: UploadFile = File(...),
+    homologacion_file: UploadFile | None = File(default=None),
+    version: int | None = Form(default=None),
+    user: AuthUser = Depends(current_user),
+) -> dict[str, Any]:
+    """Reejecuta un profile APROBADO (plantilla) con archivos NUEVOS, SIN pasar
+    por los agentes ni el chat.
+
+    Es la reutilizacion del conocimiento: la persona hizo la entrevista una vez,
+    aprobo, y ahora repite exactamente el mismo cruce con archivos de otro
+    periodo. Sube los dos archivos (y homologacion opcional), el motor
+    deterministico corre el profile aprobado tal cual, se persiste el run en el
+    historico y se generan los entregables. Cero costo LLM, reproducible.
+
+    Si la estructura del archivo nuevo no cuadra con el loader guardado (faltan
+    columnas/hojas), responde 422 con el detalle para que el usuario suba el
+    archivo correcto o reabra la entrevista.
+    """
+    with get_conn() as conn:
+        _assert_profile_run_access(conn, profile_id, user)
+        try:
+            profile = load_profile(conn, profile_id, version)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        row = conn.execute(
+            "SELECT status FROM profiles WHERE profile_id = ? AND version = ?",
+            (profile_id, profile.version),
+        ).fetchone()
+        if row is None or row["status"] != "approved":
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"El profile '{profile_id}' v{profile.version} no esta "
+                    "aprobado; solo un proceso aprobado se puede reutilizar como "
+                    "plantilla."
+                ),
+            )
+
+        left = _save_upload(profile_id, left_file, "left")
+        right = _save_upload(profile_id, right_file, "right")
+        homologacion: Path | None = None
+        if homologacion_file and homologacion_file.filename:
+            homologacion = _save_upload(profile_id, homologacion_file, "homologacion")
+        _registrar_archivos(conn, profile_id, left, right, homologacion)
+        if homologacion:
+            _importar_homologacion_si_aplica(conn, profile_id, homologacion)
+
+        profile, result = _ejecutar_aprobado(conn, profile_id, version, {})
+        info = persist_run(conn, result)
+        generados = _render_entregables(profile, result, profile_id)
+        return {
+            "ok": True,
+            "run": info,
+            "summary": result.summary(),
+            "kpis": result.kpis,
+            "archivos": generados,
+            "reejecucion": True,
         }
 
 

@@ -134,6 +134,23 @@ export class ProfilesService {
     });
   }
 
+  reejecutar(
+    id: string,
+    leftFile: File,
+    rightFile: File,
+    homologacionFile?: File | null,
+    version?: number,
+  ): Observable<GenerateResponse> {
+    const fd = new FormData();
+    fd.append('left_file', leftFile, leftFile.name);
+    fd.append('right_file', rightFile, rightFile.name);
+    if (homologacionFile) {
+      fd.append('homologacion_file', homologacionFile, homologacionFile.name);
+    }
+    if (version != null) fd.append('version', String(version));
+    return this.http.post<GenerateResponse>(`${this.base}/${id}/reejecutar`, fd);
+  }
+
   downloads(id: string): Observable<DownloadItem[]> {
     return this.http.get<DownloadItem[]>(`${this.base}/${id}/downloads`);
   }

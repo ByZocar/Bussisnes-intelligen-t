@@ -264,6 +264,63 @@ def test_post_homologacion_endpoint(client, draft, tmp_path):
     )
 
 
+def _aprobar_api_proc(client) -> None:
+    chat = client.get("/profiles/api_proc/chat").json()
+    q = next(m for m in chat if m["tipo"] == "pregunta")
+    client.post(
+        "/profiles/api_proc/chat",
+        json={"mensaje": "Si, agrupar.", "question_id": q["question_id"]},
+    )
+    resp = client.post("/profiles/api_proc/approve", json={"aprobado_por": "ana"})
+    assert resp.status_code == 200, resp.text
+
+
+def test_reejecutar_plantilla_con_archivos_nuevos(client, draft, tmp_path):
+    """Un profile aprobado se reejecuta con archivos NUEVOS sin pasar por los
+    agentes: genera entregables y persiste el run."""
+    _aprobar_api_proc(client)
+    plan2 = _mk_xlsx(
+        tmp_path, "ordenes2.xlsx",
+        ["Numero Orden", "Item", "Cantidad"],
+        [["ORD-9", "A", 7], ["ORD-9", "B", 3], ["ORD-8", "A", 4]],
+    )
+    real2 = _mk_xlsx(
+        tmp_path, "entregas2.xlsx",
+        ["Pedido", "Entregado"],
+        [["ORD-9", 10], ["ORD-7", 2]],
+    )
+    with plan2.open("rb") as f1, real2.open("rb") as f2:
+        resp = client.post(
+            "/profiles/api_proc/reejecutar",
+            files={
+                "left_file": ("ordenes2.xlsx", f1, "application/vnd.ms-excel"),
+                "right_file": ("entregas2.xlsx", f2, "application/vnd.ms-excel"),
+            },
+        )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["reejecucion"] is True
+    assert any(a.endswith(".xlsx") for a in body["archivos"])
+    assert any(a.endswith(".zip") for a in body["archivos"])
+    runs = client.get("/profiles/api_proc/runs").json()
+    assert len(runs) >= 1
+
+
+def test_reejecutar_requiere_aprobacion(client, draft, tmp_path):
+    """Sin profile aprobado, reejecutar como plantilla responde 409."""
+    plan2 = _mk_xlsx(tmp_path, "o2.xlsx", ["Numero Orden", "Item", "Cantidad"], [["ORD-9", "A", 7]])
+    real2 = _mk_xlsx(tmp_path, "e2.xlsx", ["Pedido", "Entregado"], [["ORD-9", 10]])
+    with plan2.open("rb") as f1, real2.open("rb") as f2:
+        resp = client.post(
+            "/profiles/api_proc/reejecutar",
+            files={
+                "left_file": ("o2.xlsx", f1, "application/vnd.ms-excel"),
+                "right_file": ("e2.xlsx", f2, "application/vnd.ms-excel"),
+            },
+        )
+    assert resp.status_code == 409
+
+
 def test_draft_acepta_homologacion_opcional(client, tmp_path):
     plan = _mk_xlsx(tmp_path, "plan.xlsx", ["Orden", "Item", "Cantidad"], [["O-1", "A", 3]])
     real = _mk_xlsx(tmp_path, "real.xlsx", ["Pedido", "Entregado"], [["O-1", 3]])
