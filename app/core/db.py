@@ -454,10 +454,21 @@ def init_db(path: str | Path | None = None) -> Path:
         conn.execute("PRAGMA foreign_keys = ON;")
         conn.row_factory = sqlite3.Row
         for stmt in _SCHEMA:
-            conn.execute(stmt)
+            try:
+                conn.execute(stmt)
+            except sqlite3.OperationalError as exc:
+                msg = str(exc).lower()
+                if "create index" in stmt.lower() and "no such column" in msg:
+                    # Bases viejas: primero agregamos columnas faltantes y
+                    # luego reintentamos crear los indices nuevos.
+                    continue
+                raise
         _ensure_column(conn, "cargas", "uploaded_by_user_id INTEGER REFERENCES users(id)")
         _ensure_column(conn, "runs", "owner_user_id INTEGER REFERENCES users(id)")
         _ensure_column(conn, "batches", "owner_user_id INTEGER REFERENCES users(id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_cargas_owner ON cargas(uploaded_by_user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_runs_owner ON runs(owner_user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_batches_owner ON batches(owner_user_id);")
         _seed_rbac(conn)
         admin_user_id = _bootstrap_admin(conn)
         _backfill_owners(conn, admin_user_id)

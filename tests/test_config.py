@@ -71,3 +71,29 @@ def test_storage_backend_supabase_cuando_hay_credenciales(monkeypatch):
     monkeypatch.setattr(cfg, "SUPABASE_URL", "https://x.supabase.co")
     monkeypatch.setattr(cfg, "SUPABASE_SERVICE_KEY", "sk_test_xxx")
     assert cfg.storage_backend_activo() == "supabase"
+
+
+def test_security_issues_detecta_faltantes_en_produccion(monkeypatch):
+    monkeypatch.setenv("NUTRI_ENV", "production")
+    monkeypatch.setenv("NUTRI_ENABLE_API_DOCS", "true")
+    monkeypatch.setenv("NUTRI_AUTH_COOKIE_SECURE", "false")
+    monkeypatch.setenv("NUTRI_AUTH_COOKIE_SAMESITE", "lax")
+    monkeypatch.delenv("ADMIN_INITIAL_PASSWORD", raising=False)
+    cfg = _reload_config()
+    issues = cfg.security_config_issues()
+    assert any("NUTRI_ENABLE_API_DOCS=false" in i for i in issues)
+    assert any("NUTRI_AUTH_COOKIE_SECURE=true" in i for i in issues)
+    assert any("NUTRI_AUTH_COOKIE_SAMESITE=none" in i for i in issues)
+    assert any("ADMIN_INITIAL_PASSWORD" in i for i in issues)
+
+
+def test_security_issues_vacio_con_config_segura_en_produccion(monkeypatch):
+    monkeypatch.setenv("NUTRI_ENV", "production")
+    monkeypatch.setenv("NUTRI_ENABLE_API_DOCS", "false")
+    monkeypatch.setenv("NUTRI_AUTH_COOKIE_SECURE", "true")
+    monkeypatch.setenv("NUTRI_AUTH_COOKIE_SAMESITE", "none")
+    monkeypatch.setenv("ADMIN_EMAIL", "admin@test.local")
+    monkeypatch.setenv("ADMIN_INITIAL_PASSWORD", "AdminPass123!_Prod")
+    monkeypatch.setenv("NUTRI_CORS_ORIGINS", "https://app.vercel.app")
+    cfg = _reload_config()
+    assert cfg.security_config_issues() == []

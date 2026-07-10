@@ -410,6 +410,13 @@ esta terminado.
   usuarios. Pruebas nuevas en `tests/test_security_auth.py` y regresion completa
   367/367 verde.
 
+- 2026-07-09 (13): Endurecimiento adicional (bloque 6) reforzado con rate
+  limiting en middleware (`app/api/rate_limit.py`) para `/auth/login` y
+  endpoints de alto costo (`/profiles/*/draft|refine|generate`), devolviendo
+  HTTP 429 en abuso. Se dejo configurable por env (`NUTRI_RATE_LIMIT_*`) y se
+  neutraliza automaticamente en pytest para evitar falsos positivos de CI.
+  Suite completa 367/367 se mantiene verde.
+
 - 2026-07-09 (10): Rediseño completo del frontend aprobado. Stack: Angular
   22 (sin migración). Estructura: landing pública en `/`, app privada en
   `/app/*` con AppShellComponent (sidebar navy nuevo). Cambios principales:

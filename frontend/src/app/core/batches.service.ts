@@ -12,10 +12,32 @@ import {
   ZipUploadResponse,
 } from './models';
 
+function resolveApiBaseUrl(raw: string): string {
+  const fallback = raw.replace(/\/+$/, '');
+  try {
+    const url = new URL(raw);
+    const currentHost =
+      typeof window !== 'undefined' ? window.location.hostname : '';
+    const localHosts = new Set(['localhost', '127.0.0.1']);
+    if (
+      currentHost &&
+      localHosts.has(url.hostname) &&
+      localHosts.has(currentHost) &&
+      url.hostname !== currentHost
+    ) {
+      url.hostname = currentHost;
+    }
+    return url.toString().replace(/\/+$/, '');
+  } catch {
+    return fallback;
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class BatchesService {
   private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiBaseUrl}/batches`;
+  private readonly apiBase = resolveApiBaseUrl(environment.apiBaseUrl);
+  private readonly base = `${this.apiBase}/batches`;
 
   list(includeArchived = false): Observable<BatchSummary[]> {
     let params = new HttpParams().set('include_archived', String(includeArchived));

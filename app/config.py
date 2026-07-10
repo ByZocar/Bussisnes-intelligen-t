@@ -120,10 +120,17 @@ ADMIN_INITIAL_PASSWORD = os.environ.get("ADMIN_INITIAL_PASSWORD")
 AUTH_COOKIE_NAME = os.environ.get("NUTRI_AUTH_COOKIE_NAME", "nutri_session")
 CSRF_COOKIE_NAME = os.environ.get("NUTRI_CSRF_COOKIE_NAME", "nutri_csrf")
 AUTH_COOKIE_DOMAIN = os.environ.get("NUTRI_AUTH_COOKIE_DOMAIN") or None
-AUTH_COOKIE_SAMESITE = os.environ.get("NUTRI_AUTH_COOKIE_SAMESITE", "none").strip().lower()
-if AUTH_COOKIE_SAMESITE not in {"lax", "strict", "none"}:
-    AUTH_COOKIE_SAMESITE = "none"
 AUTH_COOKIE_SECURE = _env_bool("NUTRI_AUTH_COOKIE_SECURE", IS_PRODUCTION)
+
+_default_samesite = "none" if IS_PRODUCTION else "lax"
+AUTH_COOKIE_SAMESITE = os.environ.get("NUTRI_AUTH_COOKIE_SAMESITE", _default_samesite).strip().lower()
+if AUTH_COOKIE_SAMESITE not in {"lax", "strict", "none"}:
+    AUTH_COOKIE_SAMESITE = _default_samesite
+# Chrome/Edge rechazan SameSite=None si la cookie no es Secure.
+# En local (http://localhost) forzamos Lax para evitar login "flash"
+# (entra y sale inmediatamente por sesion no persistida).
+if not IS_PRODUCTION and AUTH_COOKIE_SAMESITE == "none" and not AUTH_COOKIE_SECURE:
+    AUTH_COOKIE_SAMESITE = "lax"
 
 LOGIN_MAX_ATTEMPTS = int(os.environ.get("NUTRI_LOGIN_MAX_ATTEMPTS", "5"))
 LOGIN_LOCK_MINUTES = int(os.environ.get("NUTRI_LOGIN_LOCK_MINUTES", "15"))
@@ -164,6 +171,35 @@ def storage_backend_activo() -> str:
     if SUPABASE_URL and SUPABASE_SERVICE_KEY:
         return "supabase"
     return "local"
+
+
+def security_config_issues() -> list[str]:
+    issues: list[str] = []
+    if "*" in API_CORS_ORIGINS:
+        issues.append("NUTRI_CORS_ORIGINS no puede incluir '*'.")
+    if not API_CORS_ORIGINS:
+        issues.append("NUTRI_CORS_ORIGINS no puede estar vacio.")
+
+    if IS_PRODUCTION:
+        if ENABLE_API_DOCS:
+            issues.append(
+                "En produccion debes deshabilitar docs: NUTRI_ENABLE_API_DOCS=false."
+            )
+        if not AUTH_COOKIE_SECURE:
+            issues.append(
+                "En produccion la cookie de sesion debe ser Secure (NUTRI_AUTH_COOKIE_SECURE=true)."
+            )
+        if AUTH_COOKIE_SAMESITE != "none":
+            issues.append(
+                "Con frontend Vercel + backend Railway se requiere NUTRI_AUTH_COOKIE_SAMESITE=none."
+            )
+        if not ADMIN_EMAIL or "@" not in ADMIN_EMAIL:
+            issues.append("ADMIN_EMAIL debe estar definido con un correo valido.")
+        if not os.environ.get("ADMIN_INITIAL_PASSWORD"):
+            issues.append(
+                "En produccion define ADMIN_INITIAL_PASSWORD para bootstrap seguro e idempotente."
+            )
+    return issues
 
 
 # ---------------------------------------------------------------------------

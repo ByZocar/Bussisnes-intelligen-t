@@ -38,12 +38,18 @@ from app.config import (
     API_CORS_ORIGINS,
     ENABLE_API_DOCS,
     IS_PRODUCTION,
+    security_config_issues,
 )
 from app.core.db import init_db
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    issues = security_config_issues()
+    if issues:
+        raise RuntimeError(
+            "Configuracion insegura detectada:\n- " + "\n- ".join(issues)
+        )
     init_db()
     yield
 

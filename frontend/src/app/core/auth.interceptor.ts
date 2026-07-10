@@ -44,12 +44,16 @@ export const authInterceptor: HttpInterceptorFn = (
 ) => {
   const router = inject(Router);
   const auth = inject(AuthService);
+  const isAuthEndpoint = req.url.includes('/auth/login') || req.url.includes('/auth/me');
 
   return next(withSecurityHeaders(req)).pipe(
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse && error.status === 401) {
         auth.clearLocalSession();
-        void router.navigate(['/login']);
+        const alreadyOnLogin = router.url.startsWith('/login');
+        if (!alreadyOnLogin && !isAuthEndpoint) {
+          void router.navigate(['/login']);
+        }
       }
       return throwError(() => error);
     }),
